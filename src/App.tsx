@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Plus, Save, Clock, Trash2, X, Bookmark, BookmarkPlus, Play, LogIn, LogOut, Cloud, CloudOff, RefreshCw } from 'lucide-react';
+import { Plus, Save, Clock, Trash2, X, Bookmark, BookmarkPlus, Play, LogIn, LogOut, Cloud, CloudOff, RefreshCw, Sun, Moon, Menu } from 'lucide-react';
 import { cn } from './lib/utils';
 import { TimeBlock, RoutineTemplate, CategoryName } from './types';
 import { CATEGORIES, HOUR_HEIGHT, MINUTE_HEIGHT } from './constants';
@@ -36,6 +36,19 @@ export default function App() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authForm, setAuthForm] = useState({ email: '', password: '', isSignUp: false });
+
+  // Theme and Sidebar States
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  // Apply theme class to document
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
 
   // Initialize Supabase Auth
   useEffect(() => {
@@ -151,7 +164,7 @@ export default function App() {
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentTime(new Date());
-    }, 60000); // every minute
+    }, 10000); // every 10 seconds for smooth update
     return () => clearInterval(interval);
   }, []);
 
@@ -251,19 +264,60 @@ export default function App() {
   const currentHourFloat = currentTime.getHours() + currentTime.getMinutes() / 60;
 
   return (
-    <div className="flex h-screen w-screen bg-neutral-950 text-neutral-100 overflow-hidden font-sans">
+    <div className="flex h-screen w-screen bg-slate-50 dark:bg-neutral-950 text-slate-900 dark:text-neutral-100 overflow-hidden font-sans">
+      
+      {/* Mobile Top Bar */}
+      <div className="md:hidden absolute top-0 left-0 right-0 z-30 flex items-center justify-between p-4 bg-slate-50/90 dark:bg-neutral-950/90 backdrop-blur border-b border-black/10 dark:border-white/10">
+        <div className="flex items-center gap-2">
+          <button onClick={() => setIsSidebarOpen(true)} className="p-1">
+            <Menu className="w-5 h-5 text-slate-600 dark:text-neutral-400" />
+          </button>
+          <span className="font-medium text-slate-900 dark:text-white">Grey's Time Blocker</span>
+        </div>
+        <div className="flex items-center gap-2">
+           <button onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} className="p-2 text-slate-600 dark:text-neutral-400">
+             {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+           </button>
+           <button onClick={() => openModal()} className="p-2">
+             <Plus className="w-5 h-5 text-indigo-500 dark:text-indigo-400" />
+           </button>
+        </div>
+      </div>
+
+      {/* Sidebar Backdrop for Mobile */}
+      {isSidebarOpen && (
+        <div 
+          className="md:hidden fixed inset-0 z-30 bg-slate-900/20 dark:bg-black/50 backdrop-blur-sm"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-72 bg-white/5 backdrop-blur-xl border-r border-white/10 flex flex-col z-20 shadow-2xl">
-        <div className="p-6 border-b border-white/10 relative">
-          <div className="flex items-center gap-3 text-xl font-medium tracking-tight mb-6 mt-2">
-            <Clock className="w-6 h-6 text-indigo-400" />
-            <span>TimeBlktr</span>
+      <aside className={cn(
+        "fixed inset-y-0 left-0 w-72 bg-white/50 dark:bg-neutral-900/80 backdrop-blur-xl border-r border-black/10 dark:border-white/10 flex flex-col z-40 shadow-2xl transition-transform duration-300 md:relative md:translate-x-0",
+        isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+      )}>
+        <div className="p-6 border-b border-black/10 dark:border-white/10 relative">
+          <div className="flex items-center justify-between mb-6 mt-2">
+            <div className="flex items-center gap-3 text-lg font-medium tracking-tight">
+              <Clock className="w-6 h-6 text-indigo-500 dark:text-indigo-400" />
+              <span>Grey's Time Blocker</span>
+            </div>
+            
+            <div className="flex items-center gap-2">
+               <button onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} className="hidden md:flex p-1.5 text-slate-600 dark:text-neutral-400 hover:text-indigo-500 transition-colors">
+                 {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+               </button>
+               <button onClick={() => setIsSidebarOpen(false)} className="md:hidden p-1.5 text-slate-600 dark:text-neutral-400">
+                 <X className="w-5 h-5" />
+               </button>
+            </div>
           </div>
 
           {user && (
-            <div className="absolute top-6 right-6 text-xs flex items-center gap-1.5 text-neutral-500" title={isSyncing ? "Syncing..." : "Synced to cloud"}>
+            <div className="absolute top-6 right-6 text-xs flex items-center gap-1.5 text-slate-500 dark:text-neutral-500" title={isSyncing ? "Syncing..." : "Synced to cloud"}>
               {isSyncing ? (
-                <RefreshCw className="w-4 h-4 animate-spin text-neutral-400" />
+                <RefreshCw className="w-4 h-4 animate-spin text-slate-600 dark:text-neutral-400" />
               ) : (
                 <Cloud className="w-4 h-4 text-emerald-500/80" />
               )}
@@ -281,10 +335,10 @@ export default function App() {
 
         <div className="flex-1 overflow-y-auto no-scrollbar p-6 space-y-8">
           <div className="space-y-4">
-            <h3 className="text-xs uppercase tracking-wider text-neutral-500 font-bold">Categories</h3>
+            <h3 className="text-xs uppercase tracking-wider text-slate-500 dark:text-neutral-500 font-bold">Categories</h3>
             <div className="space-y-2">
               {Object.values(CATEGORIES).map(cat => (
-                <div key={cat.name} className="flex items-center gap-3 text-sm text-neutral-300">
+                <div key={cat.name} className="flex items-center gap-3 text-sm text-slate-700 dark:text-neutral-300">
                   <div className={cn("w-3 h-3 rounded-full border", cat.bgClass, cat.borderClass)}></div>
                   {cat.name}
                 </div>
@@ -294,7 +348,7 @@ export default function App() {
 
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs uppercase tracking-wider text-neutral-500 font-bold">Routines</h3>
+              <h3 className="text-xs uppercase tracking-wider text-slate-500 dark:text-neutral-500 font-bold">Routines</h3>
               <button onClick={saveTemplate} className="text-indigo-400 hover:text-indigo-300 transition-colors p-1" title="Save Current as Routine">
                 <BookmarkPlus className="w-4 h-4" />
               </button>
@@ -302,15 +356,15 @@ export default function App() {
             
             <div className="space-y-2">
               {templates.length === 0 ? (
-                <p className="text-sm text-neutral-600 italic">No templates saved.</p>
+                <p className="text-sm text-slate-500 dark:text-neutral-600 italic">No templates saved.</p>
               ) : (
                 templates.map(t => (
-                  <div key={t.id} className="group flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 transition-all">
-                    <button onClick={() => loadTemplate(t)} className="flex items-center gap-2 text-sm text-neutral-300 hover:text-white flex-1 text-left">
-                      <Bookmark className="w-3.5 h-3.5 text-neutral-500 group-hover:text-indigo-400" />
+                  <div key={t.id} className="group flex items-center justify-between p-3 rounded-lg bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 border border-black/5 dark:border-white/5 transition-all">
+                    <button onClick={() => loadTemplate(t)} className="flex items-center gap-2 text-sm text-slate-700 dark:text-neutral-300 hover:text-slate-900 dark:hover:text-white flex-1 text-left">
+                      <Bookmark className="w-3.5 h-3.5 text-slate-500 dark:text-neutral-500 group-hover:text-indigo-400" />
                       {t.name}
                     </button>
-                    <button onClick={() => deleteTemplate(t.id)} className="opacity-0 group-hover:opacity-100 text-neutral-500 hover:text-red-400 transition-opacity p-1">
+                    <button onClick={() => deleteTemplate(t.id)} className="opacity-0 group-hover:opacity-100 text-slate-500 dark:text-neutral-500 hover:text-red-400 transition-opacity p-1">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -320,10 +374,10 @@ export default function App() {
           </div>
         </div>
 
-        <div className="p-6 border-t border-white/10 mt-auto">
+        <div className="p-6 border-t border-black/10 dark:border-white/10 mt-auto">
           <button 
             onClick={handleAuth}
-            className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-neutral-300 py-2.5 px-4 rounded-xl transition-all duration-200 text-sm font-medium border border-white/5"
+            className="w-full flex items-center justify-center gap-2 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-slate-700 dark:text-neutral-300 py-2.5 px-4 rounded-xl transition-all duration-200 text-sm font-medium border border-black/5 dark:border-white/5"
           >
             {user ? (
               <>
@@ -338,7 +392,7 @@ export default function App() {
             )}
           </button>
           {user && (
-            <p className="text-xs text-center text-neutral-500 mt-2 truncate">
+            <p className="text-xs text-center text-slate-500 dark:text-neutral-500 mt-2 truncate">
               {user.email}
             </p>
           )}
@@ -346,7 +400,7 @@ export default function App() {
       </aside>
 
       {/* Main Timeline Area */}
-      <main ref={timelineRef} className="flex-1 overflow-y-auto no-scrollbar relative bg-neutral-900/50">
+      <main ref={timelineRef} className="flex-1 overflow-y-auto no-scrollbar relative bg-slate-100/50 dark:bg-neutral-900/50 pt-16 md:pt-0">
         <div className="relative min-w-full" style={{ height: `${24 * HOUR_HEIGHT}px` }}>
           
           {/* Timeline Grid (Background) */}
@@ -354,14 +408,14 @@ export default function App() {
             {Array.from({ length: 24 }).map((_, i) => (
               <div 
                 key={i} 
-                className="absolute w-full border-t border-white/5 flex items-start"
+                className="absolute w-full border-t border-black/5 dark:border-white/5 flex items-start"
                 style={{ top: `${i * HOUR_HEIGHT}px`, height: `${HOUR_HEIGHT}px` }}
               >
-                <div className="w-20 pl-4 pt-2 text-xs text-neutral-500 font-mono tracking-wider">
+                <div className="w-20 pl-4 pt-2 text-xs text-slate-500 dark:text-neutral-500 font-mono tracking-wider">
                   {formatHour(i)}
                 </div>
                 {/* 30 min dashed line */}
-                <div className="absolute w-full border-t border-white/5 border-dashed" style={{ top: `${HOUR_HEIGHT / 2}px` }}></div>
+                <div className="absolute w-full border-t border-black/5 dark:border-white/5 border-dashed" style={{ top: `${HOUR_HEIGHT / 2}px` }}></div>
               </div>
             ))}
           </div>
@@ -393,10 +447,10 @@ export default function App() {
                   <div className={cn("text-xs font-semibold uppercase tracking-wider mb-1", cat.colorClass)}>
                     {block.category}
                   </div>
-                  <div className="text-sm font-medium text-white truncate">
+                  <div className="text-sm font-medium text-slate-900 dark:text-white truncate">
                     {block.title}
                   </div>
-                  <div className="mt-auto text-xs text-white/50 space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="mt-auto text-xs text-slate-900/50 dark:text-white/50 space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <span>{formatHour(block.startHour)} - {formatHour(block.startHour + block.durationHours)}</span>
                   </div>
                 </div>
@@ -410,7 +464,7 @@ export default function App() {
             style={{ top: `${currentHourFloat * HOUR_HEIGHT}px` }}
           >
             <div className="w-20 pr-2 flex justify-end">
-              <span className="text-xs font-mono font-bold text-red-500 bg-neutral-950 px-1 rounded">
+              <span className="text-xs font-mono font-bold text-red-500 bg-slate-50 dark:bg-neutral-950 px-1 rounded">
                 {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </span>
             </div>
@@ -424,32 +478,32 @@ export default function App() {
 
       {/* Modal for Create/Edit Frame */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-neutral-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
-            <div className="p-5 border-b border-white/10 flex justify-between items-center bg-white/5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/20 dark:bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-md bg-white dark:bg-neutral-900 border border-black/10 dark:border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+            <div className="p-5 border-b border-black/10 dark:border-white/10 flex justify-between items-center bg-black/5 dark:bg-white/5">
               <h2 className="text-lg font-medium tracking-tight">
                 {editingBlock ? 'Edit Block' : 'New Block'}
               </h2>
-              <button onClick={closeModal} className="text-neutral-400 hover:text-white transition-colors">
+              <button onClick={closeModal} className="text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
             
             <div className="p-6 space-y-5 flex-1">
               <div className="space-y-2">
-                <label className="text-xs uppercase tracking-wider text-neutral-500 font-bold block">Title</label>
+                <label className="text-xs uppercase tracking-wider text-slate-500 dark:text-neutral-500 font-bold block">Title</label>
                 <input 
                   type="text" 
                   value={modalForm.title}
                   onChange={e => setModalForm({...modalForm, title: e.target.value})}
-                  className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-neutral-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-medium"
+                  className="w-full bg-black/5 dark:bg-black/50 border border-black/10 dark:border-white/10 rounded-lg px-4 py-2.5 text-slate-900 dark:text-white placeholder-neutral-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-medium"
                   placeholder="What are you doing?"
                   autoFocus
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs uppercase tracking-wider text-neutral-500 font-bold block">Category</label>
+                <label className="text-xs uppercase tracking-wider text-slate-500 dark:text-neutral-500 font-bold block">Category</label>
                 <div className="grid grid-cols-2 gap-2">
                   {Object.values(CATEGORIES).map(cat => (
                     <button
@@ -458,8 +512,8 @@ export default function App() {
                       className={cn(
                         "px-3 py-2 border rounded-lg text-sm transition-all flex items-center gap-2",
                         modalForm.category === cat.name 
-                          ? cn(cat.bgClass, cat.borderClass, "text-white") 
-                          : "bg-black/30 border-white/5 text-neutral-400 hover:bg-white/5 hover:border-white/10"
+                          ? cn(cat.bgClass, cat.borderClass, "text-slate-900 dark:text-white") 
+                          : "bg-slate-100 dark:bg-black/30 border-black/5 dark:border-white/5 text-slate-600 dark:text-neutral-400 hover:bg-black/5 dark:hover:bg-white/5 hover:border-black/10 dark:hover:border-white/10"
                       )}
                     >
                       <div className={cn("w-2 h-2 rounded-full", cat.bgClass, cat.borderClass, "border")}></div>
@@ -471,11 +525,11 @@ export default function App() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-xs uppercase tracking-wider text-neutral-500 font-bold block">Start Time</label>
+                  <label className="text-xs uppercase tracking-wider text-slate-500 dark:text-neutral-500 font-bold block">Start Time</label>
                   <select 
                     value={modalForm.startHour}
                     onChange={e => setModalForm({...modalForm, startHour: parseFloat(e.target.value)})}
-                    className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2.5 text-white focus:outline-none focus:border-indigo-500"
+                    className="w-full bg-black/5 dark:bg-black/50 border border-black/10 dark:border-white/10 rounded-lg px-3 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
                   >
                     {Array.from({length: 48}).map((_, i) => {
                       const h = i / 2;
@@ -484,11 +538,11 @@ export default function App() {
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs uppercase tracking-wider text-neutral-500 font-bold block">Duration</label>
+                  <label className="text-xs uppercase tracking-wider text-slate-500 dark:text-neutral-500 font-bold block">Duration</label>
                   <select 
                     value={modalForm.durationHours}
                     onChange={e => setModalForm({...modalForm, durationHours: parseFloat(e.target.value)})}
-                    className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2.5 text-white focus:outline-none focus:border-indigo-500"
+                    className="w-full bg-black/5 dark:bg-black/50 border border-black/10 dark:border-white/10 rounded-lg px-3 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
                   >
                     {[0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 8].map(h => (
                       <option key={h} value={h}>
@@ -500,7 +554,7 @@ export default function App() {
               </div>
             </div>
 
-            <div className="p-5 border-t border-white/10 flex justify-between items-center bg-black/20">
+            <div className="p-5 border-t border-black/10 dark:border-white/10 flex justify-between items-center bg-slate-50 dark:bg-black/20">
               {editingBlock ? (
                 <button 
                   onClick={() => deleteBlock(editingBlock.id)}
@@ -514,7 +568,7 @@ export default function App() {
               <div className="flex gap-3">
                 <button 
                   onClick={closeModal}
-                  className="px-4 py-2 text-sm text-neutral-300 hover:text-white transition-colors"
+                  className="px-4 py-2 text-sm text-slate-700 dark:text-neutral-300 hover:text-slate-900 dark:hover:text-white transition-colors"
                 >
                   Cancel
                 </button>
@@ -534,37 +588,37 @@ export default function App() {
 
       {/* Auth Modal */}
       {isAuthModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-          <div className="w-full max-w-sm bg-neutral-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
-            <div className="p-5 border-b border-white/10 flex justify-between items-center bg-white/5">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/30 dark:bg-black/80 backdrop-blur-md">
+          <div className="w-full max-w-sm bg-white dark:bg-neutral-900 border border-black/10 dark:border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+            <div className="p-5 border-b border-black/10 dark:border-white/10 flex justify-between items-center bg-black/5 dark:bg-white/5">
               <h2 className="text-lg font-medium tracking-tight">
                 {authForm.isSignUp ? 'Create Account' : 'Sign In'}
               </h2>
-              <button onClick={() => setIsAuthModalOpen(false)} className="text-neutral-400 hover:text-white transition-colors">
+              <button onClick={() => setIsAuthModalOpen(false)} className="text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
             
             <form onSubmit={submitAuth} className="p-6 space-y-4">
               <div className="space-y-2">
-                <label className="text-xs uppercase tracking-wider text-neutral-500 font-bold block">Email</label>
+                <label className="text-xs uppercase tracking-wider text-slate-500 dark:text-neutral-500 font-bold block">Email</label>
                 <input 
                   type="email" 
                   value={authForm.email}
                   onChange={e => setAuthForm({...authForm, email: e.target.value})}
-                  className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-neutral-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-medium"
+                  className="w-full bg-black/5 dark:bg-black/50 border border-black/10 dark:border-white/10 rounded-lg px-4 py-2.5 text-slate-900 dark:text-white placeholder-neutral-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-medium"
                   placeholder="you@example.com"
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs uppercase tracking-wider text-neutral-500 font-bold block">Password</label>
+                <label className="text-xs uppercase tracking-wider text-slate-500 dark:text-neutral-500 font-bold block">Password</label>
                 <input 
                   type="password" 
                   value={authForm.password}
                   onChange={e => setAuthForm({...authForm, password: e.target.value})}
-                  className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-neutral-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-medium"
+                  className="w-full bg-black/5 dark:bg-black/50 border border-black/10 dark:border-white/10 rounded-lg px-4 py-2.5 text-slate-900 dark:text-white placeholder-neutral-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-medium"
                   placeholder="••••••••"
                   required
                 />
