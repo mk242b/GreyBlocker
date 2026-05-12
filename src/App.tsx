@@ -34,6 +34,8 @@ export default function App() {
   // Supabase Auth State
   const [user, setUser] = useState<any>(null);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authForm, setAuthForm] = useState({ email: '', password: '', isSignUp: false });
 
   // Initialize Supabase Auth
   useEffect(() => {
@@ -54,14 +56,34 @@ export default function App() {
     if (user) {
       await supabase.auth.signOut();
     } else {
-      const email = prompt('Enter your email to sign in via Magic Link:');
-      if (email) {
-        const { error } = await supabase.auth.signInWithOtp({ email });
-        if (error) {
-          alert('Error: ' + error.message);
-        } else {
-          alert('Check your email for the login link!');
-        }
+      setIsAuthModalOpen(true);
+    }
+  };
+
+  const submitAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!authForm.email.trim() || !authForm.password.trim()) return;
+    
+    if (authForm.isSignUp) {
+      const { error } = await supabase.auth.signUp({
+        email: authForm.email,
+        password: authForm.password,
+      });
+      if (error) {
+        alert('Error: ' + error.message);
+      } else {
+        alert('Signed up successfully! You may need to check your email to confirm if email confirmations are enabled in Supabase.');
+        setIsAuthModalOpen(false);
+      }
+    } else {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: authForm.email,
+        password: authForm.password,
+      });
+      if (error) {
+        alert('Error: ' + error.message);
+      } else {
+        setIsAuthModalOpen(false);
       }
     }
   };
@@ -506,6 +528,65 @@ export default function App() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Auth Modal */}
+      {isAuthModalOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="w-full max-w-sm bg-neutral-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+            <div className="p-5 border-b border-white/10 flex justify-between items-center bg-white/5">
+              <h2 className="text-lg font-medium tracking-tight">
+                {authForm.isSignUp ? 'Create Account' : 'Sign In'}
+              </h2>
+              <button onClick={() => setIsAuthModalOpen(false)} className="text-neutral-400 hover:text-white transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <form onSubmit={submitAuth} className="p-6 space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs uppercase tracking-wider text-neutral-500 font-bold block">Email</label>
+                <input 
+                  type="email" 
+                  value={authForm.email}
+                  onChange={e => setAuthForm({...authForm, email: e.target.value})}
+                  className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-neutral-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-medium"
+                  placeholder="you@example.com"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs uppercase tracking-wider text-neutral-500 font-bold block">Password</label>
+                <input 
+                  type="password" 
+                  value={authForm.password}
+                  onChange={e => setAuthForm({...authForm, password: e.target.value})}
+                  className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-neutral-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-medium"
+                  placeholder="••••••••"
+                  required
+                />
+              </div>
+
+              <button 
+                type="submit"
+                className="w-full py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg shadow-lg shadow-indigo-500/20 transition-all font-medium mt-2"
+              >
+                {authForm.isSignUp ? 'Sign Up' : 'Sign In'}
+              </button>
+
+              <div className="text-center mt-4">
+                <button 
+                  type="button"
+                  onClick={() => setAuthForm(prev => ({...prev, isSignUp: !prev.isSignUp}))}
+                  className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+                >
+                  {authForm.isSignUp ? 'Already have an account? Sign In' : 'Need an account? Sign Up'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
